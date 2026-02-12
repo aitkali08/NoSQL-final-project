@@ -18,33 +18,44 @@ Full-stack e-commerce web application demonstrating advanced MongoDB features in
 ### Setup Instructions
 
 1. **Clone Repository**
-
+   
+```
 git clone <your-repo-url>
 cd ecommerce-store
+```
+
 Install Backend Dependencies
 
-bash
+```
 cd backend
 npm install
+```
+
 Configure Environment
 Create .env file in backend folder:
 
-text
+```
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/ecommerce
 JWT_SECRET=your_secret_key_here
+```
+
 Start MongoDB
 
-bash
+```
 # Windows
 net start MongoDB
 
 # Mac/Linux
 sudo systemctl start mongod
+```
+
 Run Backend Server
 
-bash
+```
 npm run dev
+```
+
 Open Frontend
 
 Navigate to frontend/ folder
@@ -54,7 +65,7 @@ Open index.html in browser
 Or use Live Server extension
 
 📁 Project Structure
-text
+```
 ecommerce-store/
 ├── backend/
 │   ├── server.js          # Main application
@@ -67,6 +78,8 @@ ecommerce-store/
     ├── orders.html      # Order history
     ├── profile.html     # User profile
     └── styles.css       # Global styles
+```
+
 🔌 API Endpoints (18 Total)
 Auth
 POST /api/auth/register - Register user
@@ -111,7 +124,7 @@ GET /api/reports/customer-summary - Customer analytics
 
 🗄️ Database Schema
 Users (Embedded addresses)
-javascript
+```
 {
   username: String,
   email: String,
@@ -119,8 +132,10 @@ javascript
   role: String,
   addresses: [{ street, city, zipCode, isDefault }]
 }
+```
+
 Products (Embedded reviews)
-javascript
+```
 {
   name: String,
   price: Number,
@@ -128,8 +143,10 @@ javascript
   stock: Number,
   reviews: [{ userId, rating, comment }]
 }
+```
+
 Orders (Referenced + Embedded)
-javascript
+```
 {
   userId: ObjectId (ref),
   products: [{ productId, name, price, quantity }],
@@ -137,6 +154,8 @@ javascript
   status: String,
   shippingAddress: { street, city, zipCode }
 }
+```
+
 🔍 MongoDB Features Demonstrated
 ✅ CRUD Operations
 Create: User registration, product creation
@@ -206,14 +225,18 @@ Query optimization
 🧪 Test Accounts
 Admin User:
 
-text
+```
 Email: admin@example.com
 Password: admin123
+```
+
 Regular User:
 
-text
+```
 Email: user@example.com  
 Password: user123
+```
+
 📝 License
 This project is created for educational purposes as part of Advanced Databases (NoSQL) course.
 
@@ -238,7 +261,7 @@ Authentication & Authorization ✓
 
 Detailed report with all sections ✓
 
-text
+```
 
 ---
 
@@ -267,3 +290,4 @@ npm run dev
 # 6. Open frontend
 
 # Navigate to frontend/ and open index.html
+```
