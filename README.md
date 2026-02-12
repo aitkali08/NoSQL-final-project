@@ -157,6 +157,7 @@ Orders (Referenced + Embedded)
 ```
 
 🔍 MongoDB Features Demonstrated
+
 ✅ CRUD Operations
 Create: User registration, product creation
 
@@ -291,3 +292,4 @@ npm run dev
 
 # Navigate to frontend/ and open index.html
 ```
+
