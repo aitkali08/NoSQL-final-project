@@ -1,8 +1,3 @@
----
-
-## README.md
-
-```markdown
 # E-Commerce Store - NoSQL MongoDB Project
 
 ## 📋 Project Overview
@@ -23,7 +18,7 @@ Full-stack e-commerce web application demonstrating advanced MongoDB features in
 ### Setup Instructions
 
 1. **Clone Repository**
-```bash
+
 git clone <your-repo-url>
 cd ecommerce-store
 Install Backend Dependencies
@@ -223,7 +218,7 @@ Password: user123
 This project is created for educational purposes as part of Advanced Databases (NoSQL) course.
 
 👨‍💻 Author
-[Your Name] - [Your Group]
+Shilten Aitkali - SE-2435
 
 ⭐ Project meets all requirements:
 
@@ -249,7 +244,7 @@ text
 
 ## Quick Start Commands
 
-```bash
+
 # 1. Install MongoDB
 # Download from: https://www.mongodb.com/try/download/community
 
@@ -270,4 +265,5 @@ JWT_SECRET=mysecretkey123" > .env
 npm run dev
 
 # 6. Open frontend
+
 # Navigate to frontend/ and open index.html
