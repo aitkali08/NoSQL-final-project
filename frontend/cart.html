@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store - Cart</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🛍️ E-Store</div>
+            <div class="nav-links">
+                <a href="products.html">Products</a>
+                <a href="cart.html" class="active">Cart</a>
+                <a href="orders.html">Orders</a>
+                <a href="profile.html">Profile</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>Shopping Cart</h1>
+        
+        <div id="cart-empty" class="cart-empty" style="display: none;">
+            <p>Your cart is empty</p>
+            <a href="products.html" class="btn">Continue Shopping</a>
+        </div>
+        
+        <div id="cart-content">
+            <div id="cart-items" class="cart-items"></div>
+            
+            <div class="cart-summary">
+                <h3>Order Summary</h3>
+                <div id="cart-total"></div>
+                <div class="address-section">
+                    <h4>Shipping Address</h4>
+                    <select id="saved-addresses" onchange="selectAddress()">
+                        <option value="">Select saved address</option>
+                    </select>
+                    <div id="new-address-form">
+                        <input type="text" id="street" placeholder="Street Address">
+                        <input type="text" id="city" placeholder="City">
+                        <input type="text" id="zipCode" placeholder="ZIP Code">
+                    </div>
+                </div>
+                <button onclick="checkout()" class="btn-checkout">Checkout</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://192.168.10.13:5000/api';
+        let selectedAddress = null;
+        
+        function checkAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkAuth();
+        
+        function loadCart() {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const cartContent = document.getElementById('cart-content');
+            const cartEmpty = document.getElementById('cart-empty');
+            
+            if (cart.length === 0) {
+                cartContent.style.display = 'none';
+                cartEmpty.style.display = 'block';
+                return;
+            }
+            
+            cartContent.style.display = 'grid';
+            cartEmpty.style.display = 'none';
+            
+            const cartItems = document.getElementById('cart-items');
+            cartItems.innerHTML = '';
+            
+            let total = 0;
+            
+            cart.forEach((item, index) => {
+                total += item.price * item.quantity;
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'cart-item';
+                itemDiv.innerHTML = `
+                    <div class="item-details">
+                        <h4>${item.name}</h4>
+                        <p>$${item.price} each</p>
+                    </div>
+                    <div class="item-quantity">
+                        <button onclick="updateQuantity(${index}, -1)">-</button>
+                        <span>${item.quantity}</span>
+                        <button onclick="updateQuantity(${index}, 1)">+</button>
+                    </div>
+                    <div class="item-total">
+                        $${(item.price * item.quantity).toFixed(2)}
+                    </div>
+                    <button onclick="removeItem(${index})" class="remove-btn">Remove</button>
+                `;
+                cartItems.appendChild(itemDiv);
+            });
+            
+            document.getElementById('cart-total').innerHTML = `
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>$${total.toFixed(2)}</span>
+                </div>
+                <div class="total-row">
+                    <span>Shipping:</span>
+                    <span>$10.00</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Total:</span>
+                    <span>$${(total + 10).toFixed(2)}</span>
+                </div>
+            `;
+        }
+        
+        function updateQuantity(index, change) {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            cart[index].quantity += change;
+            
+            if (cart[index].quantity <= 0) {
+                cart.splice(index, 1);
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+        }
+        
+        function removeItem(index) {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+        }
+        
+        async function loadAddresses() {
+            try {
+                const response = await fetch(`${API_URL}/users/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                const user = await response.json();
+                
+                const select = document.getElementById('saved-addresses');
+                select.innerHTML = '<option value="">Select saved address</option>';
+                
+                user.addresses.forEach((address, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${address.street}, ${address.city}, ${address.zipCode}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading addresses:', error);
+            }
+        }
+        
+        function selectAddress() {
+            const select = document.getElementById('saved-addresses');
+            const index = select.value;
+            
+            if (index !== '') {
+                const addresses = JSON.parse(localStorage.getItem('addresses') || '[]');
+                selectedAddress = addresses[index];
+                
+                document.getElementById('street').value = selectedAddress.street;
+                document.getElementById('city').value = selectedAddress.city;
+                document.getElementById('zipCode').value = selectedAddress.zipCode;
+            }
+        }
+        
+        async function checkout() {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            
+            if (cart.length === 0) {
+                alert('Your cart is empty');
+                return;
+            }
+            
+            const shippingAddress = {
+                street: document.getElementById('street').value,
+                city: document.getElementById('city').value,
+                zipCode: document.getElementById('zipCode').value
+            };
+            
+            if (!shippingAddress.street || !shippingAddress.city || !shippingAddress.zipCode) {
+                alert('Please enter shipping address');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        products: cart,
+                        shippingAddress
+                    })
+                });
+                
+                if (response.ok) {
+                    localStorage.setItem('cart', '[]');
+                    alert('Order placed successfully!');
+                    window.location.href = 'orders.html';
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to place order');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('cart');
+            window.location.href = 'index.html';
+        }
+        
+        loadCart();
+        loadAddresses();
+    </script>
+</body>
+</html>

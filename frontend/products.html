@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store - Products</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🛍️ E-Store</div>
+            <div class="nav-links">
+                <a href="products.html" class="active">Products</a>
+                <a href="cart.html">Cart</a>
+                <a href="orders.html">Orders</a>
+                <a href="profile.html">Profile</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="products-header">
+            <h1>Our Products</h1>
+            <div class="filters">
+                <input type="text" id="search" placeholder="Search products..." onkeyup="loadProducts()">
+                <select id="category" onchange="loadProducts()">
+                    <option value="">All Categories</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Books">Books</option>
+                    <option value="Home">Home</option>
+                </select>
+                <div class="price-range">
+                    <input type="number" id="minPrice" placeholder="Min Price" onchange="loadProducts()">
+                    <input type="number" id="maxPrice" placeholder="Max Price" onchange="loadProducts()">
+                </div>
+            </div>
+        </div>
+        
+        <div id="products-grid" class="products-grid">
+            <!-- Products will be loaded here -->
+        </div>
+        
+        <div id="pagination" class="pagination">
+            <!-- Pagination will be loaded here -->
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://192.168.10.13:5000/api';
+        let currentPage = 1;
+        
+        function checkAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkAuth();
+        
+        async function loadProducts() {
+            const search = document.getElementById('search').value;
+            const category = document.getElementById('category').value;
+            const minPrice = document.getElementById('minPrice').value;
+            const maxPrice = document.getElementById('maxPrice').value;
+            
+            let url = `${API_URL}/products?page=${currentPage}`;
+            if (search) url += `&search=${search}`;
+            if (category) url += `&category=${category}`;
+            if (minPrice) url += `&minPrice=${minPrice}`;
+            if (maxPrice) url += `&maxPrice=${maxPrice}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                const productsGrid = document.getElementById('products-grid');
+                productsGrid.innerHTML = '';
+                
+                data.products.forEach(product => {
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `
+                        <h3>${product.name}</h3>
+                        <p class="description">${product.description || 'No description'}</p>
+                        <p class="price">$${product.price}</p>
+                        <p class="stock">Stock: ${product.stock}</p>
+                        <button onclick="addToCart('${product._id}', '${product.name}', ${product.price})" 
+                                ${product.stock === 0 ? 'disabled' : ''}>
+                            ${product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                        </button>
+                    `;
+                    productsGrid.appendChild(card);
+                });
+                
+                // Pagination
+                const pagination = document.getElementById('pagination');
+                pagination.innerHTML = '';
+                for (let i = 1; i <= data.pages; i++) {
+                    const btn = document.createElement('button');
+                    btn.textContent = i;
+                    btn.className = i === currentPage ? 'active' : '';
+                    btn.onclick = () => {
+                        currentPage = i;
+                        loadProducts();
+                    };
+                    pagination.appendChild(btn);
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
+        
+        function addToCart(productId, name, price) {
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const existingItem = cart.find(item => item.productId === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ productId, name, price, quantity: 1 });
+            }
+            
+            localStorage.setItem('cart', JSON.stringify(cart));
+            alert('Product added to cart!');
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('cart');
+            window.location.href = 'index.html';
+        }
+        
+        loadProducts();
+    </script>
+</body>
+</html>

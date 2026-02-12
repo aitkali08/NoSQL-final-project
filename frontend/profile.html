@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store - Profile</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🛍️ E-Store</div>
+            <div class="nav-links">
+                <a href="products.html">Products</a>
+                <a href="cart.html">Cart</a>
+                <a href="orders.html">Orders</a>
+                <a href="profile.html" class="active">Profile</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>My Profile</h1>
+        
+        <div class="profile-container">
+            <div class="profile-info">
+                <h2>Account Information</h2>
+                <div id="user-info"></div>
+            </div>
+            
+            <div class="addresses-section">
+                <h2>Saved Addresses</h2>
+                <div id="addresses-list"></div>
+                
+                <div class="add-address-form">
+                    <h3>Add New Address</h3>
+                    <input type="text" id="new-street" placeholder="Street Address">
+                    <input type="text" id="new-city" placeholder="City">
+                    <input type="text" id="new-zip" placeholder="ZIP Code">
+                    <label>
+                        <input type="checkbox" id="set-default"> Set as default
+                    </label>
+                    <button onclick="addAddress()">Add Address</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://192.168.10.13:5000/api';
+        
+        function checkAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkAuth();
+        
+        async function loadProfile() {
+            try {
+                const response = await fetch(`${API_URL}/users/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const user = await response.json();
+                
+                document.getElementById('user-info').innerHTML = `
+                    <p><strong>Username:</strong> ${user.username}</p>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>Role:</strong> ${user.role}</p>
+                    <p><strong>Member since:</strong> ${new Date(user.createdAt).toLocaleDateString()}</p>
+                `;
+                
+                const addressesList = document.getElementById('addresses-list');
+                if (user.addresses.length === 0) {
+                    addressesList.innerHTML = '<p>No saved addresses</p>';
+                } else {
+                    addressesList.innerHTML = '';
+                    user.addresses.forEach((address, index) => {
+                        const addressDiv = document.createElement('div');
+                        addressDiv.className = 'address-card';
+                        addressDiv.innerHTML = `
+                            <p>${address.street}</p>
+                            <p>${address.city}, ${address.zipCode}</p>
+                            <div class="address-actions">
+                                ${address.isDefault ? '<span class="default-badge">Default</span>' : ''}
+                                <button onclick="removeAddress('${address._id}')" class="remove-btn">Remove</button>
+                            </div>
+                        `;
+                        addressesList.appendChild(addressDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+        
+        async function addAddress() {
+            const address = {
+                street: document.getElementById('new-street').value,
+                city: document.getElementById('new-city').value,
+                zipCode: document.getElementById('new-zip').value,
+                isDefault: document.getElementById('set-default').checked
+            };
+            
+            if (!address.street || !address.city || !address.zipCode) {
+                alert('Please fill all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/users/addresses`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(address)
+                });
+                
+                if (response.ok) {
+                    alert('Address added successfully');
+                    document.getElementById('new-street').value = '';
+                    document.getElementById('new-city').value = '';
+                    document.getElementById('new-zip').value = '';
+                    document.getElementById('set-default').checked = false;
+                    loadProfile();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to add address');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function removeAddress(addressId) {
+            if (!confirm('Are you sure you want to remove this address?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/users/addresses/${addressId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Address removed successfully');
+                    loadProfile();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to remove address');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('cart');
+            window.location.href = 'index.html';
+        }
+        
+        loadProfile();
+    </script>
+</body>
+</html>

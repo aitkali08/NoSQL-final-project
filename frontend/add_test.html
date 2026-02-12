@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Добавление товаров</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; text-align: center; }
+        button { background: #4CAF50; color: white; padding: 15px 30px; font-size: 20px; border: none; border-radius: 5px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>📦 ДОБАВЛЕНИЕ ТОВАРОВ</h1>
+    <button onclick="addProducts()">🔄 ДОБАВИТЬ ТОВАРЫ</button>
+    <div id="result"></div>
+
+    <script>
+        async function addProducts() {
+            const res = await fetch('http://192.168.10.13:5000/api/products');
+            const data = await res.json();
+            
+            if (data.products && data.products.length > 0) {
+                document.getElementById('result').innerHTML = '<h3 style="color:green;">✅ ТОВАРЫ УЖЕ ЕСТЬ!</h3>';
+            } else {
+                document.getElementById('result').innerHTML = '<h3 style="color:orange;">⏳ Нужно добавить товары через MongoDB</h3>';
+            }
+        }
+        addProducts();
+    </script>
+</body>
+</html>

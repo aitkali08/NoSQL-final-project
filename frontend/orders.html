@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store - My Orders</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">🛍️ E-Store</div>
+            <div class="nav-links">
+                <a href="products.html">Products</a>
+                <a href="cart.html">Cart</a>
+                <a href="orders.html" class="active">Orders</a>
+                <a href="profile.html">Profile</a>
+                <a href="#" onclick="logout()">Logout</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>My Orders</h1>
+        
+        <div id="orders-list" class="orders-list">
+            <!-- Orders will be loaded here -->
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://192.168.10.13:5000/api';
+        
+        function checkAuth() {
+            if (!localStorage.getItem('token')) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkAuth();
+        
+        async function loadOrders() {
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                const orders = await response.json();
+                const ordersList = document.getElementById('orders-list');
+                
+                if (orders.length === 0) {
+                    ordersList.innerHTML = '<p class="no-orders">You haven\'t placed any orders yet</p>';
+                    return;
+                }
+                
+                ordersList.innerHTML = '';
+                orders.forEach(order => {
+                    const orderDiv = document.createElement('div');
+                    orderDiv.className = 'order-card';
+                    
+                    const date = new Date(order.createdAt).toLocaleDateString();
+                    const statusClass = order.status.toLowerCase();
+                    
+                    let productsHtml = '';
+                    order.products.forEach(product => {
+                        productsHtml += `
+                            <div class="order-product">
+                                <span>${product.name}</span>
+                                <span>${product.quantity} x $${product.price}</span>
+                                <span>$${(product.quantity * product.price).toFixed(2)}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    orderDiv.innerHTML = `
+                        <div class="order-header">
+                            <div>
+                                <h3>Order #${order._id.slice(-8)}</h3>
+                                <p class="order-date">${date}</p>
+                            </div>
+                            <div>
+                                <span class="order-status ${statusClass}">${order.status}</span>
+                                <p class="order-total">Total: $${order.totalAmount.toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div class="order-details">
+                            ${productsHtml}
+                        </div>
+                        <div class="order-address">
+                            <h4>Shipping Address:</h4>
+                            <p>${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.zipCode}</p>
+                        </div>
+                        ${order.status === 'pending' ? `
+                            <button onclick="cancelOrder('${order._id}')" class="btn-cancel">Cancel Order</button>
+                        ` : ''}
+                    `;
+                    
+                    ordersList.appendChild(orderDiv);
+                });
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+        
+        async function cancelOrder(orderId) {
+            if (!confirm('Are you sure you want to cancel this order?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/orders/${orderId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('Order cancelled successfully');
+                    loadOrders();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to cancel order');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('cart');
+            window.location.href = 'index.html';
+        }
+        
+        loadOrders();
+    </script>
+</body>
+</html>
